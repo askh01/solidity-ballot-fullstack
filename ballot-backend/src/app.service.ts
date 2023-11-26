@@ -1,11 +1,9 @@
 import { Get, Injectable } from '@nestjs/common';
 import * as tokenJson from './assets/MyToken.json';
-import { ethers } from 'ethers';
 import 'dotenv/config';
 import { ConfigService } from '@nestjs/config';
-import { throwError } from 'rxjs';
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+import { TokenizedBallot__factory } from 'typechain-types';
+import { ethers } from 'ethers';
 require('dotenv').config();
 
 @Injectable()
@@ -69,4 +67,35 @@ export class AppService {
       throw new Error('Caller does not have Minter Role');
     }
   }
-}
+  async deployBallotContract(proposals: string[], targetBlockNumber: number) {
+    try {
+      const encodedProposals = proposals.map(ethers.encodeBytes32String);
+      console.log(encodedProposals);
+      const tokenizedBallotFactory = new TokenizedBallot__factory(this.wallet);
+      const tokenizedBallot = await tokenizedBallotFactory.deploy(
+        encodedProposals,
+        this.contract,
+        targetBlockNumber,
+      );
+      await tokenizedBallot.waitForDeployment();
+      const ballotAddress = await tokenizedBallot.getAddress();
+      console.log(ballotAddress);
+
+      let proposal:
+        | ([string, bigint] & { name: string; voteCount: bigint })
+        | boolean = true;
+      let proposalIndex = 0;
+      const deployedProposals = [];
+      while (proposal) {
+        proposal = await tokenizedBallot.proposals(proposalIndex);
+        deployedProposals.push(ethers.decodeBytes32String(proposal.name));
+        proposalIndex++;
+      }
+      console.log(proposals);
+      return { ballotAddress, proposals: deployedProposals };
+    } catch (error) {
+      console.log(error);
+      return { error: 'There was an error' };
+    }
+  }  
+} 
