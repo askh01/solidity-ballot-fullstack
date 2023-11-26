@@ -1,6 +1,9 @@
 import type { NextPage } from "next";
 import { useEffect, useState } from "react";
 import { useAccount, useBalance, useContractRead, useNetwork, useSignMessage } from "wagmi";
+import { BallotContract } from "../components/Ballot";
+
+const BALLOT_CONTRACT_ADDRESS = "0xa0960Bc65DdfB7F2eC63CC85d58c431F1D8e7931";
 
 const Home: NextPage = () => {
   return (
@@ -134,7 +137,7 @@ function TokenInfo(params: { address: `0x${string}` }) {
 
 function TokenName() {
   const { data, isError, isLoading } = useContractRead({
-    address: "0x37dBD10E7994AAcF6132cac7d33bcA899bd2C660",
+    address: "0xc7B938861937b12BD4efB654877dBB3bE2366A90",
     abi: [
       {
         constant: true,
@@ -225,12 +228,14 @@ function RandomWord() {
   );
 }
 function ApiData(params: { address: `0x${string}` }) {
+  const address = useAccount();
   return (
     <div className="card w-96 bg-primary text-primary-content mt-4">
       <div className="card-body">
         <h2 className="card-title">Testing API Coupling</h2>
         <TokenAddressFromApi></TokenAddressFromApi>
         <RequestTokens address={params.address}></RequestTokens>
+        {address && <BallotContract address={ address as `0x${string}`} tokenAddress={BALLOT_CONTRACT_ADDRESS} />}
       </div>
     </div>
   );
